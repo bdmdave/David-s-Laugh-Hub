@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LaughHub - Your Daily Dose of Smiles</title>
+  <style>
+    body {
+      font-family: Verdana, sans-serif;
+      background: linear-gradient(135deg, #f9d423, #ff4e50);
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      text-align: center;
+      overflow: hidden;
+    }
+    header {
+      position: absolute;
+      top: 0;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      color: #fff;
+      padding: 15px 0;
+      font-size: 1.3rem;
+      text-shadow: 2px 2px rgba(0, 0, 0, 0.2);
+    }
+    h1 {
+      margin: 0;
+    }
+    .joke-box {
+      background: #fff;
+      padding: 20px 30px;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+      max-width: 500px;
+      font-size: 1.1rem;
+      white-space: pre-line;
+      transition: 0.3s ease;
+    }
+    button {
+      margin-top: 15px;
+      background: #ff4e50;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #f93b3b;
+    }
+    .button-row {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    .footer {
+      position: absolute;
+      bottom: 10px;
+      width: 100%;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 8px 0;
+    }
+    .emoji {
+      font-size: 3rem;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>😂 LaughHub</h1>
+    <p>Your daily dose of smiles, powered by <strong>David Alonso</strong></p>
+  </header>
+
+  <div class="joke-box" id="joke">Loading your laugh...</div>
+  <div class="emoji" id="emoji">🤣</div>
+  <div class="button-row">
+    <button onclick="getJoke()">New Joke</button>
+    <button onclick="copyJoke()">Copy Joke</button>
+  </div>
+
+  <footer class="footer">Made with ❤️ by David Alonso | Estimation Hub Inc.</footer>
+
+  <script>
+    async function getJoke() {
+      try {
+        const res = await fetch('https://v2.jokeapi.dev/joke/Any');
+        const data = await res.json();
+        const jokeBox = document.getElementById('joke');
+        const emoji = document.getElementById('emoji');
+
+        if (data.type === 'single') {
+          jokeBox.textContent = data.joke;
+        } else {
+          jokeBox.textContent = `${data.setup}\n\n${data.delivery}`;
+        }
+
+        const emojis = ['😂', '🤣', '😆', '😄', '😁', '😜'];
+        emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      } catch (error) {
+        document.getElementById('joke').textContent = 'Oops! Couldn\'t load a joke. Try again!';
+      }
+    }
+
+    function copyJoke() {
+      const jokeText = document.getElementById('joke').textContent;
+      navigator.clipboard.writeText(jokeText);
+      alert('Joke copied to clipboard! 😂');
+    }
+
+    getJoke(); // Load the first joke automatically
+  </script>
+</body>
+</html>
