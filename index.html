@@ -34,34 +34,47 @@
   </footer>
 
   <script>
-    let jokes = [], current = 0, filtered = [];
+    let jokes = [], filtered = [], current = 0;
+
     async function loadJokes() {
-      const res = await fetch("https://raw.githubusercontent.com/bdmdave/David-s-Laugh-Hub/main/jokes.json");
-      jokes = await res.json();
-      filtered = jokes;
-      showJoke();
-      setInterval(showJoke, 6000);
+      try {
+        const res = await fetch("https://raw.githubusercontent.com/bdmdave/David-s-Laugh-Hub/main/jokes.json");
+        jokes = await res.json();
+        filtered = jokes.filter(j => j.visible !== false); // only show visible jokes
+        current = 0;
+        showJoke();
+        setInterval(showJoke, 6000); // rotate every 6 seconds
+      } catch (err) {
+        document.getElementById("joke-box").innerText = "Failed to load jokes 😅";
+        console.error(err);
+      }
     }
+
     function showJoke() {
       if (!filtered.length) return;
       const joke = filtered[current % filtered.length];
       document.getElementById("joke-box").innerText = joke.text;
       current++;
     }
-    function filterJokes(cat) {
-      filtered = cat === 'all' ? jokes : jokes.filter(j => j.category === cat);
+
+    function filterJokes(category) {
+      filtered = category === 'all' 
+        ? jokes.filter(j => j.visible !== false)
+        : jokes.filter(j => j.category === category && j.visible !== false);
       current = 0;
       showJoke();
     }
-    document.getElementById("moreBtn").onclick = showJoke;
-    window.onload = loadJokes;
+
+    document.getElementById("moreBtn").addEventListener("click", showJoke);
 
     // Hidden Admin shortcut
-    document.addEventListener("keydown", e=>{
-      if(e.ctrlKey && e.shiftKey && e.key.toLowerCase()==='l'){
-        window.location.href='admin.html';
+    document.addEventListener("keydown", e => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'l') {
+        window.location.href = 'admin.html';
       }
     });
+
+    window.onload = loadJokes;
   </script>
 </body>
 </html>
