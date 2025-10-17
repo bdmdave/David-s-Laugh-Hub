@@ -55,7 +55,7 @@
     const res=await fetch(`https://raw.githubusercontent.com/${repo}/main/${path}`);
     const jokes=await res.json();
     jokes.push({text,category:cat,visible});
-    const content=btoa(unescape(encodeURIComponent(JSON.stringify(jokes,null,2))));
+const content = btoa(unescape(encodeURIComponent(JSON.stringify(jokes, null, 2))));
     const meta=await fetch(api).then(r=>r.json());
     const body={message:'Update jokes',content,sha:meta.sha};
     const update=await fetch(api,{method:'PUT',headers:{'Authorization':'token '+token},body:JSON.stringify(body)});
