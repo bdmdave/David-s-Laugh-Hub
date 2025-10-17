@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build & Laugh Hub Admin</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Admin Panel - Build & Laugh Hub</h1>
+  <div id="login">
+    <input type="password" id="pass" placeholder="Enter password">
+    <button onclick="login()">Login</button>
+  </div>
+
+  <div id="panel" style="display:none;">
+    <input id="token" placeholder="GitHub Token (repo:contents write)" type="password">
+    <textarea id="jokeText" placeholder="Joke text"></textarea>
+    <select id="category">
+      <option>Construction Humor</option>
+      <option>Estimator Jokes</option>
+      <option>Field Life Laughs</option>
+      <option>Client-Friendly Fun</option>
+    </select>
+    <label><input type="checkbox" id="visible" checked> Visible</label>
+    <button onclick="saveJoke()">Save to GitHub</button>
+    <pre id="status"></pre>
+  </div>
+
+  <footer>
+    <p>Created by <strong>David Alonso</strong> | Estimation Hub Inc.</p>
+    <p>
+      <a href="https://docs.google.com/forms/d/e/1FAIpQLSdSf7N2VGL2LqLx30QPsYNLpgbg3uMUdZtCeBHzPTd0eWPMfA/viewform" target="_blank">Estimation Hub Form Page</a> |
+      <a href="https://bdmdave.github.io/Estimation-Hub-Inc-Unsubscribe-Portal/" target="_blank">Estimation Hub Portal</a>
+    </p>
+  </footer>
+
+<script>
+  function login(){
+    if(document.getElementById('pass').value==='admin123'){
+      document.getElementById('login').style.display='none';
+      document.getElementById('panel').style.display='block';
+    } else alert('Wrong password');
+  }
+
+  async function saveJoke(){
+    const text=document.getElementById('jokeText').value;
+    if(!text)return alert('Enter joke text');
+    const cat=document.getElementById('category').value;
+    const visible=document.getElementById('visible').checked;
+    const token=document.getElementById('token').value.trim();
+    const repo='bdmdave/David-s-Laugh-Hub';
+    const path='jokes.json';
+    const api=`https://api.github.com/repos/${repo}/contents/${path}`;
+    const res=await fetch(`https://raw.githubusercontent.com/${repo}/main/${path}`);
+    const jokes=await res.json();
+    jokes.push({text,category:cat,visible});
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(jokes,null,2))));
+    const meta=await fetch(api).then(r=>r.json());
+    const body={message:'Update jokes',content,sha:meta.sha};
+    const update=await fetch(api,{method:'PUT',headers:{'Authorization':'token '+token},body:JSON.stringify(body)});
+    document.getElementById('status').innerText='Updated! '+update.status;
+  }
+</script>
+</body>
+</html>
