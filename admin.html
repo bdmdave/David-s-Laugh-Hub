@@ -4,63 +4,142 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Build & Laugh Hub Admin</title>
-  <link rel="stylesheet" href="style.css">
+  <style>
+    body { font-family: Verdana, sans-serif; background:#f4f4f4; padding:20px; }
+    #adminPanel { display:none; max-width:800px; margin:auto; background:white; padding:20px; border-radius:8px; box-shadow:0 3px 10px rgba(0,0,0,0.2); }
+    input, select, textarea { width:100%; padding:8px; margin:5px 0; border-radius:4px; border:1px solid #ccc; }
+    button { padding:10px 20px; margin:5px 0; background:#007BFF; color:white; border:none; border-radius:4px; cursor:pointer; }
+    button:hover { background:#0056b3; }
+    h2, h3 { margin-top:10px; }
+    #jokesList { max-height:200px; overflow:auto; border:1px solid #ccc; padding:10px; margin:10px 0; }
+    .jokeItem { padding:5px; border-bottom:1px solid #eee; }
+  </style>
 </head>
 <body>
-  <h1>Admin Panel - Build & Laugh Hub</h1>
-  <div id="login">
-    <input type="password" id="pass" placeholder="Enter password">
-    <button onclick="login()">Login</button>
+  <div id="loginPanel">
+    <h2>Admin Login</h2>
+    <input type="password" id="adminPassword" placeholder="Enter password">
+    <button id="loginBtn">Login</button>
   </div>
 
-  <div id="panel" style="display:none;">
-    <input id="token" placeholder="GitHub Token (repo:contents write)" type="password">
-    <textarea id="jokeText" placeholder="Joke text"></textarea>
-    <select id="category">
-      <option>Construction Humor</option>
-      <option>Estimator Jokes</option>
-      <option>Field Life Laughs</option>
-      <option>Client-Friendly Fun</option>
+  <div id="adminPanel">
+    <h2>Build & Laugh Hub Admin Panel</h2>
+
+    <h3>Add Single Joke</h3>
+    <input type="text" id="jokeText" placeholder="Joke text">
+    <select id="jokeCategory">
+      <option value="Construction Humor">Construction Humor</option>
+      <option value="Estimator Jokes">Estimator Jokes</option>
+      <option value="Field Life Laughs">Field Life Laughs</option>
+      <option value="Client-Friendly Fun">Client-Friendly Fun</option>
     </select>
-    <label><input type="checkbox" id="visible" checked> Visible</label>
-    <button onclick="saveJoke()">Save to GitHub</button>
-    <pre id="status"></pre>
+    <label><input type="checkbox" id="jokeVisible" checked> Visible</label>
+    <button id="addJokeBtn">Add Joke</button>
+
+    <h3>Bulk Import Jokes (JSON Array)</h3>
+    <textarea id="bulkJokes" rows="10" placeholder='Paste JSON array here'></textarea>
+    <button id="importBulkBtn">Import Jokes</button>
+
+    <h3>Existing Jokes</h3>
+    <div id="jokesList">Loading jokes...</div>
+
+    <h3>GitHub Token</h3>
+    <input type="text" id="githubToken" placeholder="Paste your GitHub token here">
+    <button id="saveGitHubBtn">Save to GitHub</button>
   </div>
 
-  <footer>
-    <p>Created by <strong>David Alonso</strong> | Estimation Hub Inc.</p>
-    <p>
-      <a href="https://docs.google.com/forms/d/e/1FAIpQLSdSf7N2VGL2LqLx30QPsYNLpgbg3uMUdZtCeBHzPTd0eWPMfA/viewform" target="_blank">Estimation Hub Form Page</a> |
-      <a href="https://bdmdave.github.io/Estimation-Hub-Inc-Unsubscribe-Portal/" target="_blank">Estimation Hub Portal</a>
-    </p>
-  </footer>
+  <script>
+    const PASSWORD = "admin123"; // change if you want
+    let jokes = [];
 
-<script>
-  function login(){
-    if(document.getElementById('pass').value==='admin123'){
-      document.getElementById('login').style.display='none';
-      document.getElementById('panel').style.display='block';
-    } else alert('Wrong password');
-  }
+    // Login
+    document.getElementById("loginBtn").addEventListener("click", () => {
+      const input = document.getElementById("adminPassword").value;
+      if(input === PASSWORD){
+        document.getElementById("loginPanel").style.display="none";
+        document.getElementById("adminPanel").style.display="block";
+        loadJokes();
+      } else alert("Incorrect password!");
+    });
 
-  async function saveJoke(){
-    const text=document.getElementById('jokeText').value;
-    if(!text)return alert('Enter joke text');
-    const cat=document.getElementById('category').value;
-    const visible=document.getElementById('visible').checked;
-    const token=document.getElementById('token').value.trim();
-    const repo='bdmdave/David-s-Laugh-Hub';
-    const path='jokes.json';
-    const api=`https://api.github.com/repos/${repo}/contents/${path}`;
-    const res=await fetch(`https://raw.githubusercontent.com/${repo}/main/${path}`);
-    const jokes=await res.json();
-    jokes.push({text,category:cat,visible});
-const content = btoa(unescape(encodeURIComponent(JSON.stringify(jokes, null, 2))));
-    const meta=await fetch(api).then(r=>r.json());
-    const body={message:'Update jokes',content,sha:meta.sha};
-    const update=await fetch(api,{method:'PUT',headers:{'Authorization':'token '+token},body:JSON.stringify(body)});
-    document.getElementById('status').innerText='Updated! '+update.status;
-  }
-</script>
+    // Load existing jokes from GitHub
+    async function loadJokes(){
+      try {
+        const res = await fetch("https://raw.githubusercontent.com/bdmdave/David-s-Laugh-Hub/main/jokes.json");
+        jokes = await res.json();
+        renderJokes();
+      } catch(err){
+        console.error(err);
+        document.getElementById("jokesList").innerText="Failed to load jokes.";
+      }
+    }
+
+    function renderJokes(){
+      const container = document.getElementById("jokesList");
+      container.innerHTML="";
+      jokes.forEach((j,i)=>{
+        const div = document.createElement("div");
+        div.className="jokeItem";
+        div.innerText=`${i+1}. [${j.category}] ${j.text} ${j.visible===false?'(Hidden)':''}`;
+        container.appendChild(div);
+      });
+    }
+
+    // Add single joke
+    document.getElementById("addJokeBtn").addEventListener("click", () => {
+      const text = document.getElementById("jokeText").value.trim();
+      if(!text) return alert("Enter joke text!");
+      const category = document.getElementById("jokeCategory").value;
+      const visible = document.getElementById("jokeVisible").checked;
+      jokes.push({text, category, visible});
+      renderJokes();
+      document.getElementById("jokeText").value="";
+    });
+
+    // Bulk import
+    document.getElementById("importBulkBtn").addEventListener("click", () => {
+      const raw = document.getElementById("bulkJokes").value.trim();
+      if(!raw) return alert("Paste your JSON array first!");
+      try{
+        const bulkJokes = JSON.parse(raw);
+        if(!Array.isArray(bulkJokes)) throw new Error("Not a JSON array");
+        jokes = jokes.concat(bulkJokes);
+        renderJokes();
+        alert(`Successfully added ${bulkJokes.length} jokes!`);
+      } catch(err){
+        alert("Invalid JSON: "+err.message);
+      }
+    });
+
+    // Save to GitHub
+    async function saveToGitHub(jokesToSave){
+      const token = document.getElementById("githubToken").value.trim();
+      if(!token) return alert("Enter GitHub token!");
+      try{
+        // Get SHA of existing file
+        const shaRes = await fetch("https://api.github.com/repos/bdmdave/David-s-Laugh-Hub/contents/jokes.json");
+        const shaData = await shaRes.json();
+        const sha = shaData.sha;
+
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(jokesToSave, null, 2))));
+        const res = await fetch("https://api.github.com/repos/bdmdave/David-s-Laugh-Hub/contents/jokes.json", {
+          method:"PUT",
+          headers: { "Authorization": "token "+token, "Content-Type":"application/json" },
+          body: JSON.stringify({
+            message:"Update jokes",
+            content:content,
+            sha:sha
+          })
+        });
+        if(res.ok) alert("Saved to GitHub!");
+        else {
+          const err = await res.json();
+          alert("GitHub Error: "+(err.message||res.status));
+        }
+      } catch(err){ console.error(err); alert("Error saving to GitHub: "+err.message); }
+    }
+
+    document.getElementById("saveGitHubBtn").addEventListener("click", ()=>saveToGitHub(jokes));
+  </script>
 </body>
 </html>
